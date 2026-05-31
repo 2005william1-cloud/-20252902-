@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>자료구조 과제2 - Pokemon OOP UML Battle</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #fff; margin: 0; padding: 20px; transition: filter 0.1s; }
+        h1, h2 { text-align: center; }
+        .uml-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 20px 0; }
+        .box { background: #1e293b; border: 2px solid #475569; border-radius: 12px; padding: 14px; width: 340px; font-family: monospace; font-size: 12px; line-height: 1.5; }
+        .smalls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1400px; }
+        .small { width: 250px; }
+        .arrow { font-size: 24px; color: #64748b; }
+        .cards { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .card { background: #1e293b; padding: 10px; border-radius: 12px; width: 200px; cursor: pointer; border: 2px solid #334155; transition: all 0.2s; position: relative; z-index: 10; }
+        .card:hover { transform: translateY(-4px); border-color: #eab308; box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
+        .card img { width: 100%; height: 160px; object-fit: contain; }
+        .panel { background: #1e293b; padding: 15px; border-radius: 12px; margin-top: 20px; position: relative; z-index: 10; }
+        .hp { height: 25px; background: #334155; border-radius: 20px; overflow: hidden; border: 2px solid #0f172a; }
+        .fill { height: 100%; width: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease; }
+        button { padding: 10px; margin: 5px; cursor: pointer; border-radius: 6px; transition: all 0.2s; position: relative; z-index: 10; }
+        .sel { border: 3px solid gold; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        .terminal { background: #020617; padding: 12px; border-radius: 12px; height: 220px; overflow-y: auto; overflow-x: hidden; margin-top: 15px; font-family: monospace; position: relative; z-index: 10; border: 1px solid #334155; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        
+        /* 빈티지 디지털 스캔라인 필터 */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 9999; mix-blend-mode: multiply;
+        }
+
+        /* 몬스터볼 등장 애니메이션 (빛나면서 회전하며 커짐) */
+        @keyframes popOut {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; filter: brightness(3) contrast(2); }
+            60% { transform: scale(1.2) rotate(10deg); filter: brightness(1.5); }
+            80% { transform: scale(0.9) rotate(-5deg); filter: none; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .pop-out { animation: popOut 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* 피격 흔들림 애니메이션 */
+        @keyframes shake {
+            0% { transform: translate(2px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(2deg); filter: brightness(1.5) sepia(1) hue-rotate(-50deg); }
+            40% { transform: translate(2px, -2px) rotate(-2deg); }
+            60% { transform: translate(-3px, 2px) rotate(0deg); }
+            80% { transform: translate(-1px, -1px) rotate(2deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); filter: none; }
+        }
+        .shake { animation: shake 0.4s; }
+
+        /* 크리티컬 화면 반전 (Glitch) */
+        .invert-flash { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
+
+        /* 터미널 타이프라이터 효과 */
+        @keyframes typing { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        .typewriter { overflow: hidden; white-space: nowrap; animation: typing 0.5s steps(40, end); }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <h1 class="text-3xl font-black text-yellow-400 my-2 relative z-10">자료구조 과제 2</h1>
+    <h2 class="text-xl text-slate-400 mb-6 relative z-10">OOP 상속 구조 시각화 + 다형성 배틀</h2>
+
+    <div class="uml-wrap relative z-10">
+        <div class="box border-dashed border-red-500/70">
+            <b class="text-red-400">&lt;&lt;abstract&gt;&gt; PokemonADT</b><hr class="border-slate-700 my-1">
+            <b>[Fields]</b><br>*(None)<br>
+            <b>[Behaviors]</b><br>
+            + name : property (abstract)<br>+ element_type : property (abstract)<br>+ battle_cry() : abstract<br>+ attack(target, move_name) : abstract
+        </div>
+        <div class="arrow">▲</div>
+        <div class="box border-blue-500/70">
+            <b class="text-blue-400">Pokemon</b><hr class="border-slate-700 my-1">
+            <b>[Fields]</b><br>
+            - __name : String<br>- __element_type : String<br># _level : int<br># _hp : int<br>
+            <b>[Behaviors]</b><br>
+            + __init__(name, element_type, level, hp)<br>+ name : property<br>+ element_type : property<br>+ level : property<br>+ hp : property<br>+ battle_cry()<br>+ attack(target, move_name)
+        </div>
+        <div class="arrow">▲</div>
+        <div class="smalls">
+            <div class="box small border-amber-500/50">
+                <b class="text-amber-400">Zekrom (상속: Pokemon)</b><hr class="border-slate-700 my-1">
+                <b>[Fields]</b><br>*(None)<br>
+                <b>[Behaviors]</b><br>+ __init__(level, hp)<br>+ battle_cry() <span class="text-amber-500 font-bold">[Overridden]</span><br>+ attack(...) <span class="text-amber-500 font-bold">[Overridden]</span>
+            </div>
+            <div class="box small border-orange-500/50">
+                <b class="text-orange-400">Reshiram (상속: Pokemon)</b><hr class="border-slate-700 my-1">
+                <b>[Fields]</b><br>*(None)<br>
+                <b>[Behaviors]</b><br>+ __init__(level, hp)<br>+ battle_cry() <span class="text-orange-500 font-bold">[Overridden]</span><br>+ attack(...) <span class="text-orange-500 font-bold">[Overridden]</span>
+            </div>
+            <div class="box small border-pink-500/50">
+                <b class="text-pink-400">Victini (상속: Pokemon)</b><hr class="border-slate-700 my-1">
+                <b>[Fields]</b><br>*(None)<br>
+                <b>[Behaviors]</b><br>+ __init__(level, hp)<br>+ battle_cry() <span class="text-pink-500 font-bold">[Overridden]</span><br>+ attack(...) <span class="text-pink-500 font-bold">[Overridden]</span>
+            </div>
+            <div class="box small border-yellow-500/50">
+                <b class="text-yellow-400">Pikachu (상속: Pokemon)</b><hr class="border-slate-700 my-1">
+                <b>[Fields]</b><br>*(None)<br>
+                <b>[Behaviors]</b><br>+ __init__(level, hp)<br>+ battle_cry() <span class="text-yellow-500 font-bold">[Overridden]</span><br>+ attack(...) <span class="text-yellow-500 font-bold">[Overridden]</span>
+            </div>
+            <div class="box small border-purple-500/50">
+                <b class="text-purple-400">Gengar (상속: Pokemon)</b><hr class="border-slate-700 my-1">
+                <b>[Fields]</b><br>*(None)<br>
+                <b>[Behaviors]</b><br>+ __init__(level, hp)<br>+ battle_cry() <span class="text-purple-500 font-bold">[Overridden]</span><br>+ attack(...) <span class="text-purple-500 font-bold">[Overridden]</span>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="text-lg font-bold text-slate-300 my-6 relative z-10">포켓몬 선택 (Player 1 / Player 2)</h2>
+    <div class="cards" id="cards"></div>
+
+    <div class="panel">
+        <h2 id="status" class="text-xl font-bold text-amber-400 mb-4">포켓몬 2마리를 선택하세요</h2>
+        <div style="display:flex;justify-content:space-around;flex-wrap:wrap;align-items:flex-end" class="mb-4 min-h-[220px]">
+            <div id="p1-wrap" class="w-64 text-center transition-all">
+                <img id="p1img" src="" class="hidden w-full h-40 object-contain mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                <h3 id="p1name" class="text-lg font-bold text-blue-400 bg-slate-800 rounded py-1 border border-blue-900/50">Player 1</h3>
+                <p class="font-mono text-xs mt-2">HP: <span id="hp1txt">0</span> / <span id="hp1max">0</span> | LV: <span id="lv1txt" class="text-amber-400">0</span></p>
+                <div class="hp mt-1"><div id="hp1" class="fill" style="background-color: #22c55e;"></div></div>
+            </div>
+            <div class="flex items-center justify-center font-black text-3xl text-red-500 mb-8 px-4 animate-pulse"><h3>VS</h3></div>
+            <div id="p2-wrap" class="w-64 text-center transition-all">
+                <img id="p2img" src="" class="hidden w-full h-40 object-contain mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                <h3 id="p2name" class="text-lg font-bold text-orange-400 bg-slate-800 rounded py-1 border border-orange-900/50">Player 2</h3>
+                <p class="font-mono text-xs mt-2">HP: <span id="hp2txt">0</span> / <span id="hp2max">0</span> | LV: <span id="lv2txt" class="text-amber-400">0</span></p>
+                <div class="hp mt-1"><div id="hp2" class="fill" style="background-color: #22c55e;"></div></div>
+            </div>
+        </div>
+        <div id="moves" class="text-center my-4 min-h-[50px]"></div>
+        <div class="flex justify-between items-center px-1 mt-6">
+            <span class="text-xs font-mono text-emerald-400">📋 Terminal Battle Log</span>
+            <button onclick="resetGame()" class="text-[11px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-400 border border-slate-700">게임 리셋</button>
+        </div>
+        <div class="terminal font-mono text-xs text-slate-300" id="log"><div class="typewriter">시스템 부팅 완료... 전투 로그 대기 중.</div></div>
+    </div>
+
+    <script>
+        class Pokemon {
+            constructor(name, elementType, level, hp) {
+                this.__name = name; this.__element_type = elementType;
+                this._level = level; this._hp = hp; this._maxHp = hp;
+            }
+            get name() { return this.__name; }
+            get level() { return this._level; }
+            get hp() { return this._hp; }
+            set hp(value) {
+                if (value < 0) { this._hp = 0; log(`[${this.name}] 쓰러졌습니다!`, 'text-red-500 font-bold typewriter'); }
+                else { this._hp = value; }
+            }
+            battle_cry() { log(`[${this.name}] 전투 준비 완료!`, 'typewriter'); }
+            attack(target = null, move_name = null) {
+                let damage = target && move_name ? this._level * 2 : target ? this._level : 0;
+                let isCrit = Math.random() < 0.15;
+                if(isCrit && damage > 0) damage = Math.floor(damage * 1.5);
+
+                if (target && move_name) {
+                    log(`[${this.name}] ${target}에게 '${move_name}' 공격! ${isCrit?'<span class="text-red-400 font-bold">[CRITICAL!]</span>':''} (피해량: ${damage})`, 'typewriter');
+                } else if (target) {
+                    log(`[${this.name}] ${target}에게 기본 공격! ${isCrit?'<span class="text-red-400 font-bold">[CRITICAL!]</span>':''} (피해량: ${damage})`, 'typewriter');
+                }
+                return { damage, isCrit };
+            }
+        }
+
+        // --- 인스턴스 클래스들 ---
+        class Zekrom extends Pokemon {
+            constructor() { super("제크로무", "드래곤/전기", 75, 1000); this.moves = {'크로스썬더':9, '뇌격':13, '역린':12}; }
+            battle_cry() { log(`⚡ [${this.name}] 바리바리디슛!!`, 'text-amber-400 font-bold typewriter'); }
+            attack(target = null, move_name = "크로스썬더") {
+                if (target && move_name in this.moves) {
+                    let baseDmg = this._level * this.moves[move_name];
+                    let isCrit = Math.random() < 0.15;
+                    let dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+                    log(`[${this.name}] ${target}에게 '${move_name}'! ${isCrit?'<span class="text-red-400 font-bold animate-pulse">[CRITICAL!!]</span>':''} (피해량: ${dmg})`, 'text-amber-300 typewriter'); 
+                    return { damage: dmg, isCrit };
+                }
+                return super.attack(target, move_name);
+            }
+        }
+
+        class Reshiram extends Pokemon {
+            constructor() { super("레시라무", "드래곤/불꽃", 75, 1000); this.moves = {'크로스플레임':9, '푸른불꽃':13, '용성군':13}; }
+            battle_cry() { log(`🔥 [${this.name}] 모에라지!!`, 'text-orange-400 font-bold typewriter'); }
+            attack(target = null, move_name = "크로스플레임") {
+                if (target && move_name in this.moves) {
+                    let baseDmg = this._level * this.moves[move_name];
+                    let isCrit = Math.random() < 0.15;
+                    let dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+                    log(`[${this.name}] ${target}에게 '${move_name}'! ${isCrit?'<span class="text-red-400 font-bold animate-pulse">[CRITICAL!!]</span>':''} (피해량: ${dmg})`, 'text-orange-300 typewriter'); 
+                    return { damage: dmg, isCrit };
+                }
+                return super.attack(target, move_name);
+            }
+        }
+
+        class Victini extends Pokemon {
+            constructor() { super("비크티니", "에스퍼/불꽃", 60, 600); this.moves = {'화염탄':10, 'V제너레이트':18, '사념의박치기':8}; }
+            battle_cry() { log(`🌟 [${this.name}] 티니티니!!`, 'text-pink-400 font-bold typewriter'); }
+            attack(target = null, move_name = "화염탄") {
+                if (target && move_name in this.moves) {
+                    let baseDmg = this._level * this.moves[move_name];
+                    let isCrit = Math.random() < 0.15;
+                    let dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+                    log(`[${this.name}] ${target}에게 '${move_name}'! ${isCrit?'<span class="text-red-400 font-bold animate-pulse">[CRITICAL!!]</span>':''} (피해량: ${dmg})`, 'text-pink-300 typewriter'); 
+                    return { damage: dmg, isCrit };
+                }
+                return super.attack(target, move_name);
+            }
+        }
+
+        class Pikachu extends Pokemon {
+            constructor() { super("피카츄", "전기", 35, 300); this.moves = {'전기쇼크':5, '10만볼트':10}; }
+            battle_cry() { log(`⚡ [${this.name}] 피카피카!!`, 'text-yellow-400 font-bold typewriter'); }
+            attack(target = null, move_name = "전기쇼크") {
+                if (target && move_name in this.moves) {
+                    let baseDmg = this._level * this.moves[move_name];
+                    let isCrit = Math.random() < 0.15;
+                    let dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+                    log(`[${this.name}] ${target}에게 '${move_name}'! ${isCrit?'<span class="text-red-400 font-bold animate-pulse">[CRITICAL!!]</span>':''} (피해량: ${dmg})`, 'text-yellow-300 typewriter'); 
+                    return { damage: dmg, isCrit };
+                }
+                return super.attack(target, move_name);
+            }
+        }
+
+        class Gengar extends Pokemon {
+            constructor() { super("팬텀", "고스트/독", 65, 550); this.moves = {'섀도볼':12, '오물폭탄':11, '병상첨병':15}; }
+            battle_cry() { log(`👻 [${this.name}] 겡가아아!!`, 'text-purple-400 font-bold typewriter'); }
+            attack(target = null, move_name = "섀도볼") {
+                if (target && move_name in this.moves) {
+                    let baseDmg = this._level * this.moves[move_name];
+                    let isCrit = Math.random() < 0.15;
+                    let dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+                    log(`[${this.name}] ${target}에게 '${move_name}'! ${isCrit?'<span class="text-red-400 font-bold animate-pulse">[CRITICAL!!]</span>':''} (피해량: ${dmg})`, 'text-purple-300 typewriter'); 
+                    return { damage: dmg, isCrit };
+                }
+                return super.attack(target, move_name);
+            }
+        }
+
+        const pokemonMeta = {
+            Zekrom: { img: "https://img.pokemondb.net/artwork/large/zekrom.jpg", class: Zekrom },
+            Reshiram: { img: "https://img.pokemondb.net/artwork/large/reshiram.jpg", class: Reshiram },
+            Victini: { img: "https://img.pokemondb.net/artwork/large/victini.jpg", class: Victini },
+            Pikachu: { img: "https://img.pokemondb.net/artwork/large/pikachu.jpg", class: Pikachu },
+            Gengar: { img: "https://img.pokemondb.net/artwork/large/gengar.jpg", class: Gengar }
+        };
+
+        let player1 = null, player2 = null, isPlayer1Turn = true, gameActive = false;
+        let secretBuffer = "";
+
+        // 루트 권한 탈취 이스터에그
+        window.addEventListener('keydown', (e) => {
+            if(!gameActive) return;
+            secretBuffer += e.key;
+            if (secretBuffer.length > 10) secretBuffer = secretBuffer.slice(-10);
+            if (secretBuffer.includes("sudo")) {
+                log(`>>> [ROOT ACCESS GRANTED] System Override Protocol Initiated...`, "text-red-500 font-black animate-pulse typewriter");
+                triggerGlitch();
+                
+                let defender = isPlayer1Turn ? player2 : player1;
+                defender.hp = 0;
+                updateUI();
+                
+                endGame((isPlayer1Turn ? player1.name : player2.name) + " (ROOT Override)");
+                secretBuffer = "";
+            }
+        });
+
+        function log(t, colorClass = "text-slate-300"){
+            const logBox = document.getElementById("log");
+            logBox.innerHTML += `<div class="${colorClass}">${t}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        const cardsContainer = document.getElementById("cards");
+        Object.keys(pokemonMeta).forEach(name => {
+            let c = document.createElement("div");
+            c.className = "card";
+            c.innerHTML = `<img src="${pokemonMeta[name].img}"><h3 class="text-center font-bold mt-2">${name}</h3>`;
+            c.onclick = () => selectPokemon(name, c);
+            cardsContainer.appendChild(c);
+        });
+
+        function selectPokemon(name, el){
+            if (gameActive) return;
+            if (!player1) {
+                player1 = new pokemonMeta[name].class();
+                el.classList.add("sel");
+                log(`>>> 🗣️ Player 1: "가라! ${player1.name}!!"`, 'text-blue-400 font-bold text-sm typewriter');
+            } else if (!player2 && name !== player1.constructor.name) {
+                player2 = new pokemonMeta[name].class();
+                el.classList.add("sel");
+                log(`>>> 🗣️ Player 2: "나와라! ${player2.name}!!"`, 'text-orange-400 font-bold text-sm typewriter');
+                startBattle();
+            }
+        }
+
+        function startBattle() {
+            gameActive = true; isPlayer1Turn = true;
+            document.getElementById("p1name").innerText = player1.name;
+            document.getElementById("p2name").innerText = player2.name;
+            
+            // 배틀 아레나에 이미지 세팅 및 애니메이션 트리거
+            let p1Img = document.getElementById("p1img");
+            let p2Img = document.getElementById("p2img");
+            p1Img.src = pokemonMeta[player1.constructor.name].img;
+            p2Img.src = pokemonMeta[player2.constructor.name].img;
+            
+            p1Img.classList.remove("hidden");
+            p2Img.classList.remove("hidden");
+            p1Img.classList.remove("pop-out");
+            p2Img.classList.remove("pop-out");
+            
+            void p1Img.offsetWidth; // reflow
+            void p2Img.offsetWidth;
+            
+            p1Img.classList.add("pop-out");
+            p2Img.classList.add("pop-out");
+
+            setTimeout(() => {
+                log(`\n--- 등장 (battle_cry 다형성 호출) ---`, 'text-emerald-400 font-bold typewriter');
+                player1.battle_cry(); player2.battle_cry();
+                updateUI(); renderActionButtons();
+            }, 800); // 몬스터볼 애니메이션이 끝난 후 배틀 돌입
+        }
+
+        // 1P, 2P 턴에 따라 버튼 동적 렌더링
+        function renderActionButtons() {
+            const movesDiv = document.getElementById("moves");
+            if (!gameActive) { movesDiv.innerHTML = ""; return; }
+
+            let currentPlayer = isPlayer1Turn ? player1 : player2;
+            let themeColor = isPlayer1Turn ? 'bg-blue-600 hover:bg-blue-500' : 'bg-red-600 hover:bg-red-500';
+            
+            document.getElementById("status").innerText = `⚔️ Player ${isPlayer1Turn ? 1 : 2} (${currentPlayer.name})의 공격 턴!`;
+            
+            let html = `<div class="flex justify-center gap-2 flex-wrap">`;
+            Object.keys(currentPlayer.moves).forEach(moveName => {
+                html += `<button class="${themeColor} text-white font-bold px-4 py-2 rounded text-xs border-2 border-slate-900 shadow-lg" onclick="executeAttack('${moveName}')">${moveName}</button>`;
+            });
+            html += `</div>`;
+            movesDiv.innerHTML = html;
+        }
+
+        function triggerShake(playerNum) {
+            let el = document.getElementById(playerNum === 1 ? "p1-wrap" : "p2-wrap");
+            el.classList.remove("shake");
+            void el.offsetWidth;
+            el.classList.add("shake");
+        }
+
+        function triggerGlitch() {
+            document.body.classList.add("invert-flash");
+            setTimeout(() => document.body.classList.remove("invert-flash"), 150);
+        }
+
+        // 단일 공격 함수
+        function executeAttack(moveName) {
+            if (!gameActive) return;
+            
+            let attacker = isPlayer1Turn ? player1 : player2;
+            let defender = isPlayer1Turn ? player2 : player1;
+
+            log(`\n--- Turn: Player ${isPlayer1Turn ? 1 : 2} ---`, 'text-indigo-400 font-bold typewriter');
+            let result = attacker.attack(defender.name, moveName);
+            defender.hp -= result.damage;
+            
+            triggerShake(isPlayer1Turn ? 2 : 1);
+            if(result.isCrit) triggerGlitch();
+            updateUI();
+
+            if (defender.hp <= 0) { endGame(attacker.name); return; }
+            
+            // 턴 넘기기
+            isPlayer1Turn = !isPlayer1Turn; 
+            renderActionButtons();
+        }
+
+        function updateUI() {
+            if(!player1 || !player2) return;
+            document.getElementById("hp1txt").innerText = player1.hp;
+            document.getElementById("hp2txt").innerText = player2.hp;
+            document.getElementById("hp1max").innerText = player1._maxHp;
+            document.getElementById("hp2max").innerText = player2._maxHp;
+            document.getElementById("lv1txt").innerText = player1.level;
+            document.getElementById("lv2txt").innerText = player2.level;
+            
+            let p1Pct = (player1.hp / player1._maxHp) * 100;
+            let p2Pct = (player2.hp / player2._maxHp) * 100;
+            
+            let hp1El = document.getElementById("hp1");
+            let hp2El = document.getElementById("hp2");
+            
+            hp1El.style.width = p1Pct + "%";
+            hp2El.style.width = p2Pct + "%";
+            
+            hp1El.style.backgroundColor = p1Pct > 50 ? "#22c55e" : p1Pct > 20 ? "#eab308" : "#ef4444";
+            hp2El.style.backgroundColor = p2Pct > 50 ? "#22c55e" : p2Pct > 20 ? "#eab308" : "#ef4444";
+        }
+
+        function endGame(winnerName) {
+            gameActive = false;
+            document.getElementById("status").innerHTML = "🏆 WINNER : " + winnerName;
+            document.getElementById("moves").innerHTML = `<div class="text-center py-2"><span class="text-xl font-black text-yellow-400 animate-bounce block">🏆 ${winnerName} 승리! 🏆</span></div>`;
+        }
+
+        function resetGame() {
+            player1 = null; player2 = null; gameActive = false; isPlayer1Turn = true; secretBuffer = "";
+            document.getElementById("status").innerText = "포켓몬 2마리를 선택하세요";
+            document.getElementById("hp1txt").innerText = "0"; document.getElementById("hp2txt").innerText = "0";
+            document.getElementById("hp1max").innerText = "0"; document.getElementById("hp2max").innerText = "0";
+            document.getElementById("p1name").innerText = "Player 1"; document.getElementById("p2name").innerText = "Player 2";
+            document.getElementById("log").innerHTML = `<div class="typewriter">시스템 리부트 완료... 전투 대기.</div>`;
+            document.getElementById("moves").innerHTML = "";
+            document.querySelectorAll(".card.sel").forEach(c => c.classList.remove("sel"));
+            document.getElementById("hp1").style.width = "0%"; document.getElementById("hp2").style.width = "0%";
+            document.getElementById("hp1").style.backgroundColor = "#22c55e"; document.getElementById("hp2").style.backgroundColor = "#22c55e";
+            document.body.classList.remove("invert-flash");
+            
+            document.getElementById("p1img").classList.add("hidden");
+            document.getElementById("p2img").classList.add("hidden");
+            document.getElementById("p1img").src = "";
+            document.getElementById("p2img").src = "";
+        }
+    </script>
+</body>
+</html>
